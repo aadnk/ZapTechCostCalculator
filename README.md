@@ -1,6 +1,6 @@
 # Electric Vehicle Charging Cost Calculator
 
-This tool allows you to calculate the cost of charging sessions for an electric vehicle, using the Zaptech API to fetch charging session data and another API to fetch electricity costs.
+This tool allows you to calculate the cost of charging sessions for an electric vehicle, using the Zaptech API to fetch charging session data and the hvakosterstrommen.no API to fetch electricity costs.
 
 ## Installation
 
@@ -36,6 +36,19 @@ Replace `YYYY-MM-DD` with the desired date range and `output.csv` with your desi
 - `--secrets_file`: (Optional) Path to the secrets file. Default is "secrets.toml".
 - `--username`: (Optional) Zaptech API username. Overrides secrets file.
 - `--password`: (Optional) Zaptech API password. Overrides secrets file.
+- `--price_area`: (Optional) Price area to use for electricity cost. Default is "NO2". Can be "N01" to "N5".
+- `--low_net_usage_fee`: (Optional) Net usage fee for night time and weekends. Default is 0.2259 NOK/kWh.
+- `--high_net_usage_fee`: (Optional) Net usage fee for day time. Default is 0.3059 NOK/kWh.
+
+### Pricing areas
+
+The following pricing areas can be used for the `--price_area` argument:
+
+- `NO1`: Oslo / Øst-Norge
+- `NO2`: Kristiansand / Sør-Norge
+- `NO3`: Trondheim / Midt-Norge
+- `NO4`: Tromsø / Nord-Norge
+- `NO5`: Bergen / Vest-Norge
 
 ### Example
 ```bash
