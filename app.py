@@ -12,6 +12,9 @@ class ChargingSessionEnergy:
     Timestamp: datetime.datetime
     Energy: float
     Cost: float
+    NetUsageFee: float  # New field for the net usage fee
+    TotalCostWithNetFee: float  # New field for total cost with net usage fee
+    TotalCostWithVAT: float  # New field for total cost with VAT
     CostCurrency: str
 
 def get_charging_session_energy(from_date, to_date):
@@ -52,19 +55,42 @@ def get_charging_session_energy(from_date, to_date):
             if applicable_cost is None:
                 print(f"No applicable cost found for session {session.Id} at {energy.Timestamp}")
                 continue
-            
+
             # Calculate cost of the energy detail
             energy_cost = energy.Energy * applicable_cost.NOK_per_kWh
+
+             # Calculate the net usage fee
+            daytime_start = energy_datetime.replace(hour=6, minute=0, second=0, microsecond=0)
+            daytime_end = energy_datetime.replace(hour=22, minute=0, second=0, microsecond=0)
+            
+            # Check if it's a weekend (Saturday or Sunday)
+            is_weekend = energy_datetime.weekday() >= 5
+            
+            # Use a lower rate during the night and on weekends
+            if daytime_start <= energy_datetime < daytime_end and not is_weekend:
+                net_usage_fee_per_kwh = 0.3059  # day time net usage fee in NOK
+            else:
+                net_usage_fee_per_kwh = 0.2259  # night time and weekend net usage fee in NOK
+            
+            net_usage_fee = energy.Energy * net_usage_fee_per_kwh
+
+            # Calculate total cost with net usage fee
+            total_cost_with_net_fee = energy_cost + net_usage_fee
+            
+            # Calculate total cost with VAT
+            total_cost_with_vat = total_cost_with_net_fee * 1.25  # adding 25% VAT
 
             yield ChargingSessionEnergy(
                 SessionId=session.Id,
                 Timestamp=energy_datetime,
                 Energy=energy.Energy,
                 Cost=energy_cost,
+                NetUsageFee=net_usage_fee,  # assign calculated net usage fee
+                TotalCostWithNetFee=total_cost_with_net_fee,  # assign calculated total cost with net fee
+                TotalCostWithVAT=total_cost_with_vat,  # assign calculated total cost with VAT
                 CostCurrency="NOK"
             )
 
-# Example usage
 if __name__ == "__main__":
     from_date = datetime.datetime(2023, 9, 1)
     to_date = datetime.datetime(2023, 10, 1)
@@ -72,6 +98,6 @@ if __name__ == "__main__":
     sessions = get_charging_session_energy(from_date, to_date)
 
     # Print to CSV or any desired format
-    print("SessionId,Timestamp,Energy,Cost,CostCurrency")
+    print("SessionId,Timestamp,Energy,Cost,NetUsageFee,TotalCostWithNetFee,TotalCostWithVAT,CostCurrency")
     for session in sessions:
-        print(f"{session.SessionId},{session.Timestamp},{session.Energy},{session.Cost},{session.CostCurrency}")
+        print(f"{session.SessionId},{session.Timestamp},{session.Energy},{session.Cost},{session.NetUsageFee},{session.TotalCostWithNetFee},{session.TotalCostWithVAT},{session.CostCurrency}")
