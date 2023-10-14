@@ -125,9 +125,6 @@ def get_charging_sessions(token: str, from_date: datetime, to_date: datetime,
     else:
         raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
 
-
-# Example usage (ensure to use your actual credentials)
-# token = get_zaptech_token("your_username", "your_password")
 if __name__ == "__main__":
     # Get secrets from toml file
     secrets = toml.load("secrets.toml")

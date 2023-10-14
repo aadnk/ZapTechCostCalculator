@@ -106,16 +106,6 @@ def fetch_electricity_cost_utc(date_utc: datetime, area: PriceArea) -> list:
 
     return costs_utc
 
-# Example usage
-# date_utc = datetime(2023, 9, 1, tzinfo=pytz.utc)
-# costs_utc = fetch_electricity_cost_utc_v2(date_utc, PriceArea.NO2)
-
-
-# Example usage
-# date_example = datetime(2023, 10, 14)
-# area_example = PriceArea.NO1
-# prices = fetch_electricity_cost(date_example, area_example)
-
 if __name__ == "__main__":
     # Example usage
     date_example = datetime(2023, 10, 14)
