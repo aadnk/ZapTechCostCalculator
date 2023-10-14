@@ -55,6 +55,16 @@ The following pricing areas can be used for the `--price_area` argument:
 python app.py --from_date 2023-09-01 --to_date 2023-10-01 --output_file output.csv
 ```
 
+#### Output
+The output CSV file will contain the following columns:
+```csv
+SessionId,Timestamp,Energy,EnergyUsageFee,NetUsageFee,EnergyCost,NetUsageCost,TotalCostNoVat,TotalCostWithVAT,CostCurrency
+7bf9fd8c-769c-4503-bf74-d6c0e32f6bac,2023-09-29 23:00:00+00:00,1.4949999999998909,0.00034,0.33772049999997533,0.000508299999999963,0.33772049999997533,0.3382287999999753,0.42278599999996913,NOK
+7bf9fd8c-769c-4503-bf74-d6c0e32f6bac,2023-09-30 00:00:00+00:00,2.5270000000000437,0.00011,0.5708493000000099,0.0002779700000000048,0.5708493000000099,0.5711272700000098,0.7139090875000123,NOK
+# etc.
+```
+To find the total cost of all charging sessions in the output file, sum the `TotalCostWithVAT` column.
+
 ## Authentication
 
 The tool supports three methods for providing the Zaptech API username and password:
