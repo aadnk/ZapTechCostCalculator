@@ -1,0 +1,5 @@
+secrets.toml
+cache
+.conda
+.vscode
+__pycache__
