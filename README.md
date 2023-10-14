@@ -26,7 +26,7 @@ pip install -r requirements.txt
 To extract the pricing of all charging sessions in a given time period, use the following command:
 
 ```bash
-python app.py --from_date YYYY-MM-DD --to_date YYYY-MM-DD --output_file output.csv
+python app.py --from_date YYYY-MM-DD --to_date YYYY-MM-DD --price_area NO2 -output_file output.csv
 ```
 Replace `YYYY-MM-DD` with the desired date range and `output.csv` with your desired output file name.
 
@@ -44,7 +44,7 @@ Replace `YYYY-MM-DD` with the desired date range and `output.csv` with your desi
 
 ### Pricing areas
 
-The following pricing areas can be used for the `--price_area` argument:
+The following pricing areas can be used for the `--price_area` argument (NO for Norway, 1 - 5 for the different regions):
 
 - `NO1`: Oslo / Øst-Norge
 - `NO2`: Kristiansand / Sør-Norge
@@ -54,7 +54,7 @@ The following pricing areas can be used for the `--price_area` argument:
 
 ### Example
 ```bash
-python app.py --from_date 2023-09-01 --to_date 2023-10-01 --output_file output.csv
+python app.py --from_date 2023-09-01 --to_date 2023-10-01 --price_area NO2 --output_file output.csv
 ```
 
 #### Output
