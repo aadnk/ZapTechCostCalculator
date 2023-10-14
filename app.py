@@ -1,7 +1,8 @@
+import argparse
 import datetime
-import pytz
+import os
 import toml
-from power_cost import PriceArea, fetch_electricity_cost, fetch_electricity_cost_utc
+from power_cost import PriceArea, fetch_electricity_cost_utc
 from zaptech_api import get_charging_sessions, get_zaptech_token
 from dateutil import parser  # To parse datetime strings
 from dataclasses import dataclass
@@ -11,15 +12,15 @@ class ChargingSessionEnergy:
     SessionId: str
     Timestamp: datetime.datetime
     Energy: float
-    Cost: float
+    EnergyUsageFee: float  # New field for the energy usage fee
     NetUsageFee: float  # New field for the net usage fee
-    TotalCostWithNetFee: float  # New field for total cost with net usage fee
+    EnergyCost: float
+    NetUsageCost: float  
+    TotalCostNoVat: float  # New field for total cost without VAT
     TotalCostWithVAT: float  # New field for total cost with VAT
     CostCurrency: str
 
-def get_charging_session_energy(from_date, to_date):
-    # Get secrets from toml file
-    secrets = toml.load("secrets.toml")
+def get_charging_session_energy(secrets, from_date, to_date):
     username = secrets["zaptech"]["username"]
     password = secrets["zaptech"]["password"]
 
@@ -74,30 +75,71 @@ def get_charging_session_energy(from_date, to_date):
             
             net_usage_fee = energy.Energy * net_usage_fee_per_kwh
 
-            # Calculate total cost with net usage fee
-            total_cost_with_net_fee = energy_cost + net_usage_fee
+            # Calculate total cost without VAT
+            total_cost_without_vat = energy_cost + net_usage_fee
             
             # Calculate total cost with VAT
-            total_cost_with_vat = total_cost_with_net_fee * 1.25  # adding 25% VAT
+            total_cost_with_vat = total_cost_without_vat * 1.25  # adding 25% VAT
 
             yield ChargingSessionEnergy(
                 SessionId=session.Id,
                 Timestamp=energy_datetime,
                 Energy=energy.Energy,
-                Cost=energy_cost,
-                NetUsageFee=net_usage_fee,  # assign calculated net usage fee
-                TotalCostWithNetFee=total_cost_with_net_fee,  # assign calculated total cost with net fee
-                TotalCostWithVAT=total_cost_with_vat,  # assign calculated total cost with VAT
+                EnergyUsageFee=applicable_cost.NOK_per_kWh,
+                NetUsageFee=net_usage_fee, 
+                EnergyCost=energy_cost,
+                NetUsageCost=net_usage_fee,
+                TotalCostNoVat=total_cost_without_vat,  
+                TotalCostWithVAT=total_cost_with_vat,  
                 CostCurrency="NOK"
             )
 
+def get_secrets(args):
+    # Check environment variables
+    username = os.environ.get('ZAPTECH_USERNAME')
+    password = os.environ.get('ZAPTECH_PASSWORD')
+
+    # Check secrets file
+    if username is None or password is None:
+        if args.secrets_file:
+            if not os.path.exists(args.secrets_file):
+                # If the user has supplied a secrets file, but it doesn't exist, raise an error
+                if args.secrets_file != "secrets.toml":
+                    raise ValueError(f"Secrets file {args.secrets_file} does not exist. Create it or provide credentials via environment variables or command line arguments.")
+            else:
+                secrets = toml.load(args.secrets_file)
+                username = secrets["zaptech"]["username"]
+                password = secrets["zaptech"]["password"]
+
+    # Check command line arguments
+    if args.username and args.password:
+        username = args.username
+        password = args.password
+
+    if username is None or password is None:
+        raise ValueError("Credentials are missing. Provide them via environment variables, a secrets file, or command line arguments.")
+
+    return {"zaptech": {"username": username, "password": password}}
+
+def main():
+    parser = argparse.ArgumentParser(description='Fetch and calculate charging session energy costs.')
+    parser.add_argument('--from_date', required=True, type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), help='Start date (inclusive) in format YYYY-MM-DD.')
+    parser.add_argument('--to_date', required=True, type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d'), help='End date (exclusive) in format YYYY-MM-DD.')
+    parser.add_argument('--output_file', required=True, help='Path to the output CSV file.')
+    parser.add_argument('--secrets_file', default='secrets.toml', help='Path to the secrets file. Default is "secrets.toml".')
+    parser.add_argument('--username', help='Zaptech API username. Overrides secrets file.')
+    parser.add_argument('--password', help='Zaptech API password. Overrides secrets file.')
+
+    args = parser.parse_args()
+    secrets = get_secrets(args)
+
+    sessions = get_charging_session_energy(secrets, args.from_date, args.to_date)
+
+    with open(args.output_file, 'w') as f:
+        # Print to CSV
+        print("SessionId,Timestamp,Energy,EnergyUsageFee,NetUsageFee,EnergyCost,NetUsageCost,TotalCostNoVat,TotalCostWithVAT,CostCurrency", file=f)
+        for session in sessions:
+            print(f"{session.SessionId},{session.Timestamp},{session.Energy},{session.EnergyUsageFee},{session.NetUsageFee},{session.EnergyCost},{session.NetUsageCost},{session.TotalCostNoVat},{session.TotalCostWithVAT},{session.CostCurrency}", file=f)
+
 if __name__ == "__main__":
-    from_date = datetime.datetime(2023, 9, 1)
-    to_date = datetime.datetime(2023, 10, 1)
-
-    sessions = get_charging_session_energy(from_date, to_date)
-
-    # Print to CSV or any desired format
-    print("SessionId,Timestamp,Energy,Cost,NetUsageFee,TotalCostWithNetFee,TotalCostWithVAT,CostCurrency")
-    for session in sessions:
-        print(f"{session.SessionId},{session.Timestamp},{session.Energy},{session.Cost},{session.NetUsageFee},{session.TotalCostWithNetFee},{session.TotalCostWithVAT},{session.CostCurrency}")
+    main()
