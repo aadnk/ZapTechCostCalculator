@@ -3,3 +3,4 @@ cache
 .conda
 .vscode
 __pycache__
+outputs
