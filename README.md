@@ -11,6 +11,8 @@ Create a conda/virtual environment and install the requirements:
 conda create --prefix ./.conda python=3.10
 conda activate ./.conda
 ```
+Or use any other preferred method for creating a virtual environment.
+
 ### Step 2: Install Dependencies
 Then install the necessary Python packages listed in the `requirements.txt`:
 
